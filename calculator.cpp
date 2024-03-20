@@ -1,94 +1,124 @@
-#include <bits/stdc++.h>
+#include<bits/stdc++.h>
 using namespace std;
 
-int calculate(int a, int b, char op) {
-    switch (op) {
-        case '+': return a + b;
-        case '-': return a - b;
-        case '*': return a * b;
-        case '/': return a / b;
-        case '%': return a % b;
-        default: throw invalid_argument("Invalid operator");
+double clc(char op, double left, double right = 0) {
+    
+    if (op == '+') 
+        return left + right; 
+    else if (op == '-') 
+        return left - right; 
+    else if (op == '*') 
+        return left * right; 
+    else if (op == '/') { 
+        if (right != 0) 
+            return left / right; 
+        else {
+            cout << "Error: Division by zero!" << endl; 
+            return 0;
+        }
     }
+    else if (op == '^') 
+        return pow(left, right); 
+    else if (op == 's') 
+        return sqrt(left); 
+    else if (op == 'r')
+        return round(left); 
+    else if (op == 'a') 
+        return abs(left);
+    return 0; 
+}
+
+int opr(char op) {
+    if (op == '^' || op=='r' || op == 's' || op == 'a') 
+        return 3;
+    else if (op == '*' || op == '/') 
+        return 2; 
+    else if (op == '+' || op == '-') 
+        return 1; 
+    return -1; 
 }
 
 int main() {
-    string input;
-    cout << "Enter an arithmetic expression: ";
-    getline(cin, input);
+    cout << "Welcome to the Calculator!" << endl;
+    char choice = 'y';
+    while (choice == 'y' || choice == 'Y') {
+       
+        string exp;
+        cout << "Please enter your arithmetic expression: ";
+        getline(cin, exp);
 
-    istringstream iss(input);
-    char op;
-    stack<int> numStack;
-    stack<char> opStack;
+        stack<char> s; 
+        stack<double> op_s; 
 
-    while (iss >> op) {
-        if (isdigit(op)) {
-            iss.putback(op);
-            int num;
-            iss >> num;
-            numStack.push(num);
-        } else if (op == '(') {
-            opStack.push(op);
-        } else if (op == ')') {
-            while (!opStack.empty() && opStack.top() != '(') {
-                char oper = opStack.top();
-                opStack.pop();
-                if (oper == 's') { 
-                    int num = numStack.top();
-                    numStack.pop();
-                    if (num < 0)
-                        throw invalid_argument("Cannot calculate square root of a negative number");
-                    numStack.push(sqrt(num));
-                } else if (oper == '^') { 
-                    int exponent = numStack.top();
-                    numStack.pop();
-                    int base = numStack.top();
-                    numStack.pop();
-                    numStack.push(pow(base, exponent));
-                } else { 
-                    int b = numStack.top();
-                    numStack.pop();
-                    int a = numStack.top();
-                    numStack.pop();
-                    numStack.push(calculate(a, b, oper));
+        double number = 0; 
+        double decimalPlace = 10;
+
+        for (auto i = 0; i < exp.size(); i++) {
+            if (isdigit(exp[i])) { 
+                number = number * 10 + (exp[i] - '0'); 
+            } else if (exp[i] == '.') { 
+                i++; 
+                while (i < exp.size() && isdigit(exp[i])) { 
+                    number += (exp[i] - '0') / decimalPlace; 
+                    decimalPlace *= 10; 
+                    i++; 
                 }
+                i--; 
+            } else if (exp[i] == '(') { 
+                s.push('('); 
+            } else if (exp[i] == ')') { 
+                op_s.push(number); 
+                number = 0; 
+                decimalPlace = 10; 
+                while (s.top() != '(') { 
+                    double r = op_s.top(); 
+                    op_s.pop(); 
+                    double l = op_s.top(); 
+                    op_s.pop();
+                    double re = clc(s.top(), l, r); 
+                    op_s.push(re); 
+                    s.pop(); 
+                }
+                s.pop(); 
+            } 
+            else if (exp[i] == '+' ||  exp[i] == '-' ||  exp[i] == '*' || exp[i] == '/' || exp[i] == '^' || exp[i] == 's' || exp[i] == 'r' || exp[i] == 'a')
+            { 
+                op_s.push(number); 
+                number = 0; 
+                decimalPlace = 10; 
+
+                int pC = opr(exp[i]); 
+                while (!s.empty() && opr(s.top()) >= pC) { 
+                    double r = op_s.top(); 
+                    op_s.pop(); 
+                    double l = op_s.top(); 
+                    op_s.pop(); 
+                    double re = clc(s.top(), l, r); 
+                    op_s.push(re); 
+                    s.pop(); 
+                }
+                s.push(exp[i]); 
             }
-            opStack.pop(); 
-        } else {
-            opStack.push(op);
         }
-    }
+        op_s.push(number);
 
-    while (!opStack.empty()) {
-        char oper = opStack.top();
-        opStack.pop();
-        if (oper == 's') { 
-            int num = numStack.top();
-            numStack.pop();
-            if (num < 0)
-                throw invalid_argument("Cannot calculate square root of a negative number");
-            numStack.push(sqrt(num));
-        } else if (oper == '^') { 
-            int exponent = numStack.top();
-            numStack.pop();
-            int base = numStack.top();
-            numStack.pop();
-            numStack.push(pow(base, exponent));
-        } else { 
-            int b = numStack.top();
-            numStack.pop();
-            int a = numStack.top();
-            numStack.pop();
-            numStack.push(calculate(a, b, oper));
+        while (!s.empty()) {
+            double r = op_s.top(); 
+            op_s.pop(); 
+            double l = op_s.top(); 
+            op_s.pop(); 
+            double re = clc(s.top(), l, r); 
+            op_s.push(re); 
+            s.pop(); 
         }
-    }
+        cout << "Result:" << op_s.top() << endl;
+        cout << "Do you want to continue (y/n)?";
+        cin >> choice;
+        
+       while (cin.get() != '\n');
 
-    if (numStack.size() == 1) {
-        cout << "Result: " << numStack.top() << endl;
-    } else {
-        cout << "Invalid expression" << endl;
     }
-
+    
+    cout << "Thank you for using the calculator!" << endl; 
     return 0;
 }
